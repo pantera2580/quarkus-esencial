@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import org.mec.config.ProductInventoryConfig;
 import org.mec.model.ProductInventory;
 import org.mec.model.ValidationGroups;
+import org.mec.repository.ProductInventoryRepository;
 import org.mec.services.ProductService;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -26,6 +27,8 @@ public class InventoryResource {
     ProductService productService;
     @Inject
     ProductInventoryConfig productInventoryConfig;
+    @Inject
+    ProductInventoryRepository productInventoryRepository;
 
     /**
      * Toma la configuracion del application.properties si son muchas configs se vuelve denso hacerlo asi
@@ -48,7 +51,7 @@ public class InventoryResource {
     @Path("/{sku}")
     public Response inventory(@PathParam("sku") String sku) {
         LOGGER.debugf("get by sku %s", sku);
-        ProductInventory productInventory = ProductInventory.findBySku(sku);
+        ProductInventory productInventory = productInventoryRepository.findBySku(sku);
 
         if (productInventory == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -61,7 +64,7 @@ public class InventoryResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Collection<ProductInventory> listInventory() {
         LOGGER.debug("Product inventory list");
-        return ProductInventory.listAll();
+        return productInventoryRepository.listAll();
     }
 
     @POST
@@ -69,8 +72,8 @@ public class InventoryResource {
     @Transactional
     public Response createProduct(@Context UriInfo uriInfo, @Valid @ConvertGroup(to = ValidationGroups.Post.class) ProductInventory productInventory) {
         LOGGER.debugf("create %s", productInventory);
-        productInventory.persist();
-        UriBuilder path = uriInfo.getAbsolutePathBuilder().path(productInventory.sku);
+        productInventoryRepository.persist(productInventory);
+        UriBuilder path = uriInfo.getAbsolutePathBuilder().path(productInventory.getSku());
         //recomendable devolver el path absoluto
         return Response.created(path.build()).build();
     }
@@ -81,13 +84,13 @@ public class InventoryResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateProduct(@PathParam("sku") String sku, @ConvertGroup(to = ValidationGroups.Put.class)  @Valid ProductInventory productInventory) {
         LOGGER.debugf("update %s", productInventory);
-        ProductInventory update = ProductInventory.findBySku(sku);
+        ProductInventory update = productInventoryRepository.findBySku(sku);
         if(update == null){
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        update.name = productInventory.name;
-        update.category = productInventory.category;
-        update.persist();
+        update.setName(productInventory.getName());
+        update.setCategory(productInventory.getCategory());
+        productInventoryRepository.persist(update);
         //devolver un notfound si el elemento no existe o devolver la entidad modificada
         return Response.accepted(productInventory).build();
     }
@@ -96,8 +99,8 @@ public class InventoryResource {
     @Transactional
     public Response updateStock(@PathParam("sku") String sku, @QueryParam("stock") Integer stock) {
         LOGGER.debugf("get by sku %s", sku);
-        int currentStock = ProductInventory.findCurrentStock(sku);
-        ProductInventory.update("unitsAvailable = ?1 where sku=?2", currentStock + stock, sku);
+        int currentStock = productInventoryRepository.findCurrentStock(sku);
+        productInventoryRepository.update("unitsAvailable = ?1 where sku=?2", currentStock + stock, sku);
         return Response.accepted(URI.create(sku)).build();
     }
 
@@ -107,7 +110,7 @@ public class InventoryResource {
     @Operation(summary = "Update the stock of a product by sku", description = "Longer description that explains all.")
     public Response delete(@PathParam("sku") String sku) {
         LOGGER.debugf("delete by sku %s", sku);
-        ProductInventory.delete("sku", sku);
+        productInventoryRepository.delete("sku", sku);
         return Response.accepted().build();
     }
 }

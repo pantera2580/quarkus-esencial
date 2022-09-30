@@ -3,10 +3,7 @@ package org.mec.model;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Null;
 import javax.validation.constraints.PositiveOrZero;
@@ -16,60 +13,141 @@ import java.util.List;
 @Entity
 @RegisterForReflection //para evitar que la GraalVm se lo garche en compilacion nativa
 /**
- * Extender de PanacheEntity para proveer de primarykey (tipo long)
- * Patron active record necesita que los atributos sean publicos, entidades mas compactas
+ * Patron Data Repository, agregar id autogenerado y crear clase repository
  */
 
-public class ProductInventory extends PanacheEntity {
+public class ProductInventory {
+    @Id @GeneratedValue Long id;
     @Null(groups = ValidationGroups.Put.class)
     @NotBlank(groups = ValidationGroups.Post.class)
-    public String sku;
-    public String category;
+    private String sku;
+    private String category;
 
     @NotBlank(message = "Name is mandatory and should be provided")
-    public String name;
+    private String name;
 
-    public int quantity;
-    public String powerWatts;
-    public String footprint;
-    public BigDecimal manufacturingCost;
-    public BigDecimal price;
+    private int quantity;
+    private String powerWatts;
+    private String footprint;
+    private BigDecimal manufacturingCost;
+    private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    public ProductLine productLine;
+    private ProductLine productLine;
 
     @Convert(converter = ConsumerTypeConverter.class)
-    public List<ConsumerType> targetConsumer = new ArrayList<>();
+    private List<ConsumerType> targetConsumer = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
-    public ProductAvailability productAvailability;
+    private ProductAvailability productAvailability;
 
     @PositiveOrZero
-    public int unitsAvailable;
+    private int unitsAvailable;
 
     public ProductInventory() {
     }
 
-    public static ProductInventory findBySku(String sku) {
-        return find("sku", sku).firstResult();
+    public Long getId() {
+        return id;
     }
 
-    /**
-     * Solo recupera la cantidad de unidades disponibles segun sku provisto.
-     * En este caso trabajar con proyecciones es mas eficiente porque no mapea toda la entidad
-     * @param sku
-     * @return cantidad de unidades disponibles (0 o +)
-     */
-
-    public static int findCurrentStock(String sku) {
-        UnitsAvailable unitsAvailable = find("sku", sku).project(UnitsAvailable.class).firstResult();
-        if(unitsAvailable == null){
-            return 0;
-        }
-        return unitsAvailable.unitsAvailable;
+    public void setId(Long id) {
+        this.id = id;
     }
-    /**
-     * No se requieren getters y setters en ActiveRecord
-     */
 
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public String getPowerWatts() {
+        return powerWatts;
+    }
+
+    public void setPowerWatts(String powerWatts) {
+        this.powerWatts = powerWatts;
+    }
+
+    public String getFootprint() {
+        return footprint;
+    }
+
+    public void setFootprint(String footprint) {
+        this.footprint = footprint;
+    }
+
+    public BigDecimal getManufacturingCost() {
+        return manufacturingCost;
+    }
+
+    public void setManufacturingCost(BigDecimal manufacturingCost) {
+        this.manufacturingCost = manufacturingCost;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public ProductLine getProductLine() {
+        return productLine;
+    }
+
+    public void setProductLine(ProductLine productLine) {
+        this.productLine = productLine;
+    }
+
+    public List<ConsumerType> getTargetConsumer() {
+        return targetConsumer;
+    }
+
+    public void setTargetConsumer(List<ConsumerType> targetConsumer) {
+        this.targetConsumer = targetConsumer;
+    }
+
+    public ProductAvailability getProductAvailability() {
+        return productAvailability;
+    }
+
+    public void setProductAvailability(ProductAvailability productAvailability) {
+        this.productAvailability = productAvailability;
+    }
+
+    public int getUnitsAvailable() {
+        return unitsAvailable;
+    }
+
+    public void setUnitsAvailable(int unitsAvailable) {
+        this.unitsAvailable = unitsAvailable;
+    }
 }
